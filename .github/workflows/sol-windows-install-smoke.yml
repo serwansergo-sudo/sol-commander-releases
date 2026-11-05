@@ -55,7 +55,7 @@ jobs:
         shell: pwsh
         run: |
           Write-Output 'This smoke tests the pinned published stable GitHub v0.1.6 only.'
-          Write-Output 'It does NOT approve the newer v0.1.7 local build, 57 tools, OAuth, or plugin publication.'
+          Write-Output 'This does NOT approve candidate releases, 57 tools, OAuth, or plugin publication.'
 
   beta-candidate-acceptance:
     if: github.event_name == 'release' && github.event.release.prerelease == true && github.event.release.tag_name == 'v0.1.7'
@@ -115,6 +115,76 @@ jobs:
           if ($u.ExitCode -ne 0) { throw "BETA_UPGRADE_FAILED=$($u.ExitCode)" }
           $runtime = Get-Content (Join-Path $root 'runtime.json') -Raw | ConvertFrom-Json
           if ($runtime.version -ne '0.1.7') { throw 'UPGRADE_NOT_ACTIVE' }
+          if ((Get-Content $fixture -Raw) -ne 'SYNTHETIC-DATA-ONLY') { throw 'USER_DATA_CHANGED' }
+          $remove = Start-Process $beta -ArgumentList @('--uninstall','--quiet','--acceptance','--install-root',('"' + $root + '"')) -Wait -PassThru
+          if ($remove.ExitCode -ne 0) { throw "UPGRADE_UNINSTALL_FAILED=$($remove.ExitCode)" }
+          if (!(Test-Path $fixture)) { throw 'UNINSTALL_DELETED_DATA' }
+          if (Test-Path (Join-Path $root 'app')) { throw 'UNINSTALL_LEFT_RUNTIME' }
+          Write-Output 'BETA_UPGRADE_AND_USER_DATA_PRESERVATION_PASS'
+      - name: Clarify test scope
+        shell: pwsh
+        run: |
+          Write-Output 'Tested the pinned beta EXE on disposable Windows, not the owner PC.'
+          Write-Output 'Not a certificate, auto-update, 57 tools, OAuth or OpenAI publication validation.'
+
+  beta-018-acceptance:
+    if: github.event_name == 'workflow_dispatch' || (github.event_name == 'release' && github.event.release.prerelease == true && github.event.release.tag_name == 'v0.1.8')
+    name: Exact v0.1.8 candidate (SHA-pinned): self-test, clean install and v0.1.6 upgrade
+    runs-on: windows-2022
+    timeout-minutes: 20
+    steps:
+      - name: Download and pin beta and stable installers
+        shell: pwsh
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          $ErrorActionPreference = 'Stop'
+          New-Item -ItemType Directory -Path beta, stable | Out-Null
+          gh release download v0.1.8 -R $env:GITHUB_REPOSITORY --pattern 'SOL-Commander-Setup-v0.1.8.exe' --dir beta
+          if ($LASTEXITCODE -ne 0) { throw 'BETA_DOWNLOAD_FAILED' }
+          gh release download v0.1.6 -R $env:GITHUB_REPOSITORY --pattern 'SOL-Commander-Setup-v0.1.6.exe' --dir stable
+          if ($LASTEXITCODE -ne 0) { throw 'STABLE_DOWNLOAD_FAILED' }
+          $bh = (Get-FileHash 'beta\SOL-Commander-Setup-v0.1.8.exe' -Algorithm SHA256).Hash.ToLowerInvariant()
+          $sh = (Get-FileHash 'stable\SOL-Commander-Setup-v0.1.6.exe' -Algorithm SHA256).Hash.ToLowerInvariant()
+          if ($bh -ne '93cd3ed77b03c7370b346e031d8cb187690544b5c876bdc54de94d70b6b22a6e') { throw 'BETA_SHA256_MISMATCH' }
+          if ($sh -ne '4852f8eacb847e2ab756cf882a6c95ee74b2596059579e20ae434dd4aedb92d4') { throw 'STABLE_SHA256_MISMATCH' }
+          Write-Output "BETA_SHA256_VERIFIED=$bh"
+      - name: Clean-install and uninstall exact beta
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $setup = Join-Path $PWD 'beta\SOL-Commander-Setup-v0.1.8.exe'
+          $root = Join-Path $env:RUNNER_TEMP 'SOL Commander beta clean install'
+          $t = Start-Process $setup -ArgumentList '--self-test' -Wait -PassThru
+          if ($t.ExitCode -ne 0) { throw "SELF_TEST_FAILED=$($t.ExitCode)" }
+          $i = Start-Process $setup -ArgumentList @('--quiet','--acceptance','--install-root',('"' + $root + '"')) -Wait -PassThru
+          if ($i.ExitCode -ne 0) { throw "BETA_INSTALL_FAILED=$($i.ExitCode)" }
+          if (!(Test-Path (Join-Path $root 'app\0.1.8\agent\dist\main.js'))) { throw 'BETA_AGENT_MISSING' }
+          if (!(Test-Path (Join-Path $root 'app\0.1.8\runtime\node.exe'))) { throw 'BETA_RUNTIME_MISSING' }
+          $runtime = Get-Content (Join-Path $root 'runtime.json') -Raw | ConvertFrom-Json
+          if ($runtime.version -ne '0.1.8') { throw 'BETA_VERSION_MISMATCH' }
+          $u = Start-Process $setup -ArgumentList @('--uninstall','--quiet','--acceptance','--install-root',('"' + $root + '"')) -Wait -PassThru
+          if ($u.ExitCode -ne 0) { throw "BETA_UNINSTALL_FAILED=$($u.ExitCode)" }
+          if (Test-Path (Join-Path $root 'app')) { throw 'BETA_RUNTIME_NOT_REMOVED' }
+          Write-Output 'CLEAN_BETA_INSTALL_UNINSTALL_PASS'
+      - name: Upgrade from stable preserving local user data
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $root = Join-Path $env:RUNNER_TEMP 'SOL Commander beta upgrade'
+          $stable = Join-Path $PWD 'stable\SOL-Commander-Setup-v0.1.6.exe'
+          $beta = Join-Path $PWD 'beta\SOL-Commander-Setup-v0.1.8.exe'
+          $args = @('--quiet','--acceptance','--install-root',('"' + $root + '"'))
+          $i = Start-Process $stable -ArgumentList $args -Wait -PassThru
+          if ($i.ExitCode -ne 0) { throw "STABLE_INSTALL_FAILED=$($i.ExitCode)" }
+          $data = Join-Path $root 'data'
+          New-Item -ItemType Directory -Force -Path $data | Out-Null
+          $fixture = Join-Path $data 'preserve-fixture.txt'
+          [IO.File]::WriteAllText($fixture,'SYNTHETIC-DATA-ONLY')
+          $u = Start-Process $beta -ArgumentList $args -Wait -PassThru
+          if ($u.ExitCode -ne 0) { throw "BETA_UPGRADE_FAILED=$($u.ExitCode)" }
+          $runtime = Get-Content (Join-Path $root 'runtime.json') -Raw | ConvertFrom-Json
+          if ($runtime.version -ne '0.1.8') { throw 'UPGRADE_NOT_ACTIVE' }
           if ((Get-Content $fixture -Raw) -ne 'SYNTHETIC-DATA-ONLY') { throw 'USER_DATA_CHANGED' }
           $remove = Start-Process $beta -ArgumentList @('--uninstall','--quiet','--acceptance','--install-root',('"' + $root + '"')) -Wait -PassThru
           if ($remove.ExitCode -ne 0) { throw "UPGRADE_UNINSTALL_FAILED=$($remove.ExitCode)" }
