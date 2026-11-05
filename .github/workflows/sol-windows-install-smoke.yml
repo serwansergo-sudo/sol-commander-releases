@@ -131,7 +131,7 @@ jobs:
     if: github.event_name == 'workflow_dispatch' || (github.event_name == 'release' && github.event.release.prerelease == true && github.event.release.tag_name == 'v0.1.8')
     name: Exact v0.1.8 candidate - SHA-pinned Windows install and v0.1.6 upgrade
     permissions:
-      contents: write # Temporary draft-release inspection; revert after the isolated acceptance.
+      contents: read
     runs-on: windows-2022
     timeout-minutes: 20
     steps:
@@ -142,23 +142,8 @@ jobs:
         run: |
           $ErrorActionPreference = 'Stop'
           New-Item -ItemType Directory -Path beta, stable | Out-Null
-          # Draft releases have no published tag; fetch this exact existing draft by ID.
-          # Fail closed if the release or SHA-pinned asset is not available to the job token.
-          $headers = @{
-            Authorization = "Bearer $env:GH_TOKEN"
-            Accept = 'application/vnd.github+json'
-            'X-GitHub-Api-Version' = '2022-11-28'
-            'User-Agent' = 'SOL-Commander-Windows-Acceptance'
-          }
-          $releaseUri = "https://api.github.com/repos/$env:GITHUB_REPOSITORY/releases/435869972"
-          $candidate = Invoke-RestMethod -Method Get -Uri $releaseUri -Headers $headers
-          if (!$candidate.draft -or $candidate.tag_name -ne 'v0.1.8') { throw 'EXACT_DRAFT_RELEASE_NOT_FOUND' }
-          $asset = @($candidate.assets | Where-Object { $_.name -eq 'SOL-Commander-Setup-v0.1.8.exe' -and $_.state -eq 'uploaded' }) | Select-Object -First 1
-          if (!$asset -or $asset.size -ne 49584128 -or $asset.digest -ne 'sha256:93cd3ed77b03c7370b346e031d8cb187690544b5c876bdc54de94d70b6b22a6e') {
-            throw 'DRAFT_BINARY_METADATA_MISMATCH'
-          }
-          $headers.Accept = 'application/octet-stream'
-          Invoke-WebRequest -Method Get -Uri $asset.url -Headers $headers -MaximumRedirection 5 -OutFile 'beta\SOL-Commander-Setup-v0.1.8.exe'
+          gh release download v0.1.8 -R $env:GITHUB_REPOSITORY --pattern 'SOL-Commander-Setup-v0.1.8.exe' --dir beta
+          if ($LASTEXITCODE -ne 0) { throw 'BETA_DOWNLOAD_FAILED' }
           gh release download v0.1.6 -R $env:GITHUB_REPOSITORY --pattern 'SOL-Commander-Setup-v0.1.6.exe' --dir stable
           if ($LASTEXITCODE -ne 0) { throw 'STABLE_DOWNLOAD_FAILED' }
           $bh = (Get-FileHash 'beta\SOL-Commander-Setup-v0.1.8.exe' -Algorithm SHA256).Hash.ToLowerInvariant()
