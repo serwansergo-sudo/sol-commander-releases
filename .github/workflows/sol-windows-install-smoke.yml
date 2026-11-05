@@ -1,4 +1,4 @@
-name: SOL Windows Draft Installer Smoke
+name: SOL Windows Stable Installer Smoke
 
 on:
   push:
@@ -10,8 +10,8 @@ permissions:
   contents: read
 
 jobs:
-  draft-install-smoke:
-    name: Draft v0.1.7 / clean isolated Windows acceptance
+  stable-install-smoke:
+    name: Stable v0.1.6 / clean isolated Windows acceptance
     runs-on: windows-2022
     timeout-minutes: 15
     steps:
@@ -21,35 +21,35 @@ jobs:
           GH_TOKEN: ${{ github.token }}
         run: |
           $ErrorActionPreference = 'Stop'
-          gh release download v0.1.7 -R $env:GITHUB_REPOSITORY --pattern 'SOL-Commander-Setup-v0.1.7.exe' --dir .
-          if ($LASTEXITCODE -ne 0) { throw "DRAFT_ASSET_DOWNLOAD_FAILED" }
-          if (!(Test-Path '.\SOL-Commander-Setup-v0.1.7.exe')) { throw "DRAFT_ASSET_NOT_FOUND" }
-          $actual = (Get-FileHash '.\SOL-Commander-Setup-v0.1.7.exe' -Algorithm SHA256).Hash.ToLowerInvariant()
-          $expected = '968dff018a8d8ac49b7eed9be2e32b74e5c55c03ecf5bbb0fb518394df5cffff'
-          if ($actual -ne $expected) { throw "UNREVIEWED_DRAFT_ASSET: hash differs from checked version" }
-          Write-Output "DRAFT_ASSET_SHA256_VERIFIED=$actual"
+          gh release download v0.1.6 -R $env:GITHUB_REPOSITORY --pattern 'SOL-Commander-Setup-v0.1.6.exe' --dir .
+          if ($LASTEXITCODE -ne 0) { throw "STABLE_ASSET_DOWNLOAD_FAILED" }
+          if (!(Test-Path '.\SOL-Commander-Setup-v0.1.6.exe')) { throw "STABLE_ASSET_NOT_FOUND" }
+          $actual = (Get-FileHash '.\SOL-Commander-Setup-v0.1.6.exe' -Algorithm SHA256).Hash.ToLowerInvariant()
+          $expected = '4852f8eacb847e2ab756cf882a6c95ee74b2596059579e20ae434dd4aedb92d4'
+          if ($actual -ne $expected) { throw "UNREVIEWED_STABLE_ASSET: hash differs from checked version" }
+          Write-Output "STABLE_ASSET_SHA256_VERIFIED=$actual"
 
       - name: Self-test then install into disposable acceptance directory
         shell: pwsh
         run: |
           $ErrorActionPreference = 'Stop'
-          $setup = Join-Path $PWD 'SOL-Commander-Setup-v0.1.7.exe'
+          $setup = Join-Path $PWD 'SOL-Commander-Setup-v0.1.6.exe'
           $root = Join-Path $env:RUNNER_TEMP 'SOL Commander isolated acceptance'
           & $setup --self-test
           if ($LASTEXITCODE -ne 0) { throw "SETUP_SELF_TEST_FAILED" }
           & $setup --quiet --acceptance --install-root $root
           if ($LASTEXITCODE -ne 0) { throw "CLEAN_INSTALL_FAILED" }
-          $agent = Join-Path $root 'app\0.1.7\agent\dist\main.js'
-          $node = Join-Path $root 'app\0.1.7\runtime\node.exe'
+          $agent = Join-Path $root 'app\0.1.6\agent\dist\main.js'
+          $node = Join-Path $root 'app\0.1.6\runtime\node.exe'
           if (!(Test-Path -LiteralPath $agent)) { throw "AGENT_ENTRYPOINT_MISSING" }
           if (!(Test-Path -LiteralPath $node)) { throw "NODE_RUNTIME_MISSING" }
           & $setup --uninstall --quiet --acceptance --install-root $root
           if ($LASTEXITCODE -ne 0) { throw "ISOLATED_UNINSTALL_FAILED" }
           if (Test-Path -LiteralPath (Join-Path $root 'app')) { throw "INSTALL_FILES_REMAIN_AFTER_UNINSTALL" }
-          Write-Output 'DRAFT_WINDOWS_INSTALL_SMOKE_PASS'
+          Write-Output 'STABLE_WINDOWS_INSTALL_SMOKE_PASS'
 
       - name: Result scope
         shell: pwsh
         run: |
-          Write-Output 'This smoke tests the older pinned unsigned GitHub DRAFT only.'
-          Write-Output 'It does NOT approve the newer local build, signature, 57 tools, OAuth, or public release.'
+          Write-Output 'This smoke tests the pinned published stable GitHub v0.1.6 only.'
+          Write-Output 'It does NOT approve the newer v0.1.7 local build, 57 tools, OAuth, or plugin publication.'
