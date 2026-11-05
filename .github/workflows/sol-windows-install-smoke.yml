@@ -129,7 +129,7 @@ jobs:
 
   beta-018-acceptance:
     if: github.event_name == 'workflow_dispatch' || (github.event_name == 'release' && github.event.release.prerelease == true && github.event.release.tag_name == 'v0.1.8')
-    name: Exact v0.1.8 candidate (SHA-pinned): self-test, clean install and v0.1.6 upgrade
+    name: Exact v0.1.8 candidate - SHA-pinned Windows install and v0.1.6 upgrade
     runs-on: windows-2022
     timeout-minutes: 20
     steps:
