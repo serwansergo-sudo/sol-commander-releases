@@ -15,7 +15,7 @@ jobs:
     runs-on: windows-2022
     timeout-minutes: 15
     steps:
-      - name: Download existing draft asset (read-only)
+      - name: Download published stable asset (read-only)
         shell: pwsh
         env:
           GH_TOKEN: ${{ github.token }}
@@ -35,16 +35,16 @@ jobs:
           $ErrorActionPreference = 'Stop'
           $setup = Join-Path $PWD 'SOL-Commander-Setup-v0.1.6.exe'
           $root = Join-Path $env:RUNNER_TEMP 'SOL Commander isolated acceptance'
-          & $setup --self-test
-          if ($LASTEXITCODE -ne 0) { throw "SETUP_SELF_TEST_FAILED" }
-          & $setup --quiet --acceptance --install-root $root
-          if ($LASTEXITCODE -ne 0) { throw "CLEAN_INSTALL_FAILED" }
+          $selfTest = Start-Process -FilePath $setup -ArgumentList '--self-test' -Wait -PassThru
+          if ($selfTest.ExitCode -ne 0) { throw "SETUP_SELF_TEST_FAILED exit=$($selfTest.ExitCode)" }
+          $install = Start-Process -FilePath $setup -ArgumentList @('--quiet', '--acceptance', '--install-root', ('"' + $root + '"')) -Wait -PassThru
+          if ($install.ExitCode -ne 0) { throw "CLEAN_INSTALL_FAILED exit=$($install.ExitCode)" }
           $agent = Join-Path $root 'app\0.1.6\agent\dist\main.js'
           $node = Join-Path $root 'app\0.1.6\runtime\node.exe'
           if (!(Test-Path -LiteralPath $agent)) { throw "AGENT_ENTRYPOINT_MISSING" }
           if (!(Test-Path -LiteralPath $node)) { throw "NODE_RUNTIME_MISSING" }
-          & $setup --uninstall --quiet --acceptance --install-root $root
-          if ($LASTEXITCODE -ne 0) { throw "ISOLATED_UNINSTALL_FAILED" }
+          $uninstall = Start-Process -FilePath $setup -ArgumentList @('--uninstall', '--quiet', '--acceptance', '--install-root', ('"' + $root + '"')) -Wait -PassThru
+          if ($uninstall.ExitCode -ne 0) { throw "ISOLATED_UNINSTALL_FAILED exit=$($uninstall.ExitCode)" }
           if (Test-Path -LiteralPath (Join-Path $root 'app')) { throw "INSTALL_FILES_REMAIN_AFTER_UNINSTALL" }
           Write-Output 'STABLE_WINDOWS_INSTALL_SMOKE_PASS'
 
