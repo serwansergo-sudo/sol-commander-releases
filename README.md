@@ -2,6 +2,18 @@
 
 One product for ChatGPT and an authorized Windows PC. You install **one Windows Setup EXE** per PC; the ChatGPT plugin is a separate connected software component, not another Windows installer.
 
+## Быстрый старт SOL Commander (русский)
+
+**Статус:** публичная тестовая версия Windows `0.1.7 Beta`. Плагин ещё не опубликован в каталоге ChatGPT. Сайт пока предлагает выпуск `0.1.6` с 32 инструментами PUBLIC_CORE. Автоматическое обновление неподписанных версий отключено.
+
+1. Откройте [SOL Commander v0.1.7 Beta](https://github.com/serwansergo-sudo/sol-commander-releases/releases/tag/v0.1.7) и скачайте только `SOL-Commander-Setup-v0.1.7.exe`. ZIP и JSON не нужно устанавливать.
+2. Проверяйте, что файл получен из данного GitHub-релиза. SHA-256 установщика: `16c3f87a09a6d7f39dbe717e648f76fc275a4f62856d61e9b02ef844a9364bba`. Это неподписанная Beta: если Windows блокирует запуск, не отключайте защиту ради установки.
+3. Если установка прошла без предупреждений, откройте SOL Commander и следуйте экранным инструкциям для подключения своей учётной записи и разрешённых папок. Плагин из общего каталога ChatGPT пока недоступен.
+4. Для тестирования используйте только свои несекретные файлы. Не подключайте медицинские карты, платёжные данные, пароли, документы детей и иные чувствительные материалы. Защита чувствительного содержимого неполная.
+5. Об ошибках сообщайте через [GitHub Issues](https://github.com/serwansergo-sudo/sol-commander-releases/issues), без персональных данных, логинов, паролей и токенов.
+
+[Независимый тест установки, обновления и удаления — PASS](https://github.com/serwansergo-sudo/sol-commander-releases/actions/runs/42020532912). Это не сертификат цифровой подписи и не подтверждение публикации плагина OpenAI.
+
 ## Current public Windows download
 
 **Current default public Windows download: v0.1.6** (Cloudflare stable channel; GitHub currently labels this release a Beta/prerelease).
