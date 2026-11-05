@@ -4,7 +4,7 @@ One product for ChatGPT and an authorized Windows PC. You install **one Windows 
 
 ## Current public Windows download
 
-**Stable public download: v0.1.6**
+**Current default public Windows download: v0.1.6** (Cloudflare stable channel; GitHub currently labels this release a Beta/prerelease).
 
 [Download SOL Commander for Windows (Setup EXE)](https://github.com/serwansergo-sudo/sol-commander-releases/releases/download/v0.1.6/SOL-Commander-Setup-v0.1.6.exe)
 
@@ -28,7 +28,7 @@ For the stable experience, download from the verified link above. Follow the Win
 
 | Component | Version/status | Meaning |
 | --- | --- | --- |
-| Public Windows Setup | `0.1.6` | Current publicly available installer |
+| Default public Windows Setup | `0.1.6` | Configured via Cloudflare stable channel; GitHub release itself is marked Beta |
 | Windows beta installer | `0.1.7` — unsigned prerelease | Published beta; isolated installation/upgrade PASS; not stable auto-update |
 | Private ChatGPT development plugin | `1.0.9` | Plugin package version, not the Windows Agent version |
 | Public ChatGPT plugin | Not submitted or published | A separate review and approval process |
@@ -41,6 +41,6 @@ The Windows updater checks the public stable release metadata and independently 
 
 After a ChatGPT plugin is published, its hosted MCP tools can be rescanned and made available to users following OpenAI's validation. Package metadata and bundled skill updates still require a plugin package update.
 
-The GitHub `v0.1.7` release is an **explicitly labeled public prerelease** with current verified beta candidate bytes. The stable public installer remains v0.1.6.
+The GitHub `v0.1.7` release is an **explicitly labeled public prerelease** with current verified beta candidate bytes. The default public download remains v0.1.6. Both existing GitHub release records are currently marked prerelease, so GitHub's `/releases/latest` full-release endpoint does not yet resolve.
 
 For issues or feature requests: https://github.com/serwansergo-sudo/sol-commander-releases/issues
