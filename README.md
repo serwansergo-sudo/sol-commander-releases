@@ -13,14 +13,23 @@ One product for ChatGPT and an authorized Windows PC. You install **one Windows 
 - SHA-256: `4852f8eacb847e2ab756cf882a6c95ee74b2596059579e20ae434dd4aedb92d4`
 - Official product website: https://sol-commander-public-core.serwanboba.workers.dev/
 
-Download only from the verified link above. Follow the Windows installer prompts and review Windows security warnings. SOL requires explicit local permissions and an authorized pairing before it can work with your computer.
+For the stable experience, download from the verified link above. Follow the Windows installer prompts and review Windows security warnings. SOL requires explicit local permissions and an authorized pairing before it can work with your computer.
+
+## Public beta v0.1.7 — independently tested, still unsigned
+
+[View v0.1.7 Beta release and setup download](https://github.com/serwansergo-sudo/sol-commander-releases/releases/tag/v0.1.7)
+
+- Windows beta Setup: `SOL-Commander-Setup-v0.1.7.exe` — 49,583,616 bytes, SHA-256 `16c3f87a09a6d7f39dbe717e648f76fc275a4f62856d61e9b02ef844a9364bba`.
+- GitHub Actions independently verified exact Setup SHA-256, clean installation/uninstallation, upgrade from v0.1.6, and preservation of synthetic user data on disposable Windows Server 2022: [PASS report](https://github.com/serwansergo-sudo/sol-commander-releases/actions/runs/42020532912).
+- **Beta only, unsigned.** Windows security warnings may appear. Do not disable security protections. Automatic updates are NOT enabled for this beta. It is not the recommended stable download.
+- Publishing the Windows beta does not publish the OpenAI ChatGPT directory plugin or switch Cloudflare's existing public site.
 
 ## Release channels and version numbers
 
 | Component | Version/status | Meaning |
 | --- | --- | --- |
 | Public Windows Setup | `0.1.6` | Current publicly available installer |
-| New Windows Agent candidate | `0.1.7` — unsigned draft | Under verification; not a stable update |
+| Windows beta installer | `0.1.7` — unsigned prerelease | Published beta; isolated installation/upgrade PASS; not stable auto-update |
 | Private ChatGPT development plugin | `1.0.9` | Plugin package version, not the Windows Agent version |
 | Public ChatGPT plugin | Not submitted or published | A separate review and approval process |
 
@@ -32,6 +41,6 @@ The Windows updater checks the public stable release metadata and independently 
 
 After a ChatGPT plugin is published, its hosted MCP tools can be rescanned and made available to users following OpenAI's validation. Package metadata and bundled skill updates still require a plugin package update.
 
-The GitHub `v0.1.7` release is currently a **draft with older unsigned candidate files**. It must not be presented as the current public download.
+The GitHub `v0.1.7` release is an **explicitly labeled public prerelease** with current verified beta candidate bytes. The stable public installer remains v0.1.6.
 
 For issues or feature requests: https://github.com/serwansergo-sudo/sol-commander-releases/issues
