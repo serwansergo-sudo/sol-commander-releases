@@ -79,6 +79,52 @@ jobs:
           if ($bh -ne '16c3f87a09a6d7f39dbe717e648f76fc275a4f62856d61e9b02ef844a9364bba') { throw 'BETA_SHA256_MISMATCH' }
           if ($sh -ne '4852f8eacb847e2ab756cf882a6c95ee74b2596059579e20ae434dd4aedb92d4') { throw 'STABLE_SHA256_MISMATCH' }
           Write-Output "BETA_SHA256_VERIFIED=$bh"
+      - name: Validate exact draft ZIP, every staged file and license notices
+        shell: pwsh
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $headers = @{
+            Authorization = "Bearer $env:GH_TOKEN"
+            Accept = 'application/vnd.github+json'
+            'X-GitHub-Api-Version' = '2022-11-28'
+            'User-Agent' = 'SOL-Commander-Archive-Acceptance'
+          }
+          $rel = Invoke-RestMethod -Method Get -Uri "https://api.github.com/repos/$env:GITHUB_REPOSITORY/releases/436355712" -Headers $headers
+          if (!$rel.draft -or $rel.tag_name -ne 'v0.1.9') { throw 'DRAFT_RELEASE_UNAVAILABLE' }
+          $zip = @($rel.assets | Where-Object { $_.name -eq 'sol-commander-agent-windows-v0.1.9.zip' -and $_.state -eq 'uploaded' }) | Select-Object -First 1
+          if (!$zip -or $zip.size -ne 49562418 -or $zip.digest -ne 'sha256:18e2c02cf5c25688449731d2486ff8eddd676b543c17113522add3b01be98c3e') { throw 'DRAFT_ZIP_METADATA_MISMATCH' }
+          $headers.Accept = 'application/octet-stream'
+          Invoke-WebRequest -Method Get -Uri $zip.url -Headers $headers -MaximumRedirection 5 -OutFile 'beta\sol-commander-agent-windows-v0.1.9.zip'
+          $hash=(Get-FileHash 'beta\sol-commander-agent-windows-v0.1.9.zip' -Algorithm SHA256).Hash.ToLowerInvariant()
+          if($hash -ne '18e2c02cf5c25688449731d2486ff8eddd676b543c17113522add3b01be98c3e') { throw 'DRAFT_ZIP_SHA256_MISMATCH' }
+          Expand-Archive -LiteralPath 'beta\sol-commander-agent-windows-v0.1.9.zip' -DestinationPath 'beta-unpacked'
+          $base=Join-Path $PWD 'beta-unpacked'
+          $checksums=Get-Content -LiteralPath (Join-Path $base 'SHA256SUMS.txt')
+          $checked=0
+          foreach($line in $checksums) {
+            if($line -notmatch '^([0-9a-f]{64})  (.+)$') { throw 'STAGE_CHECKSUM_FORMAT' }
+            $expected=$Matches[1]
+            $name=$Matches[2].Replace('/','\')
+            if($name.StartsWith('\') -or $name.Split('\').Contains('..')) { throw 'CHECKSUM_PATH_TRAVERSAL' }
+            $file=Join-Path $base $name
+            if(!(Test-Path -LiteralPath $file -PathType Leaf)) { throw 'ZIP_MEMBER_MISSING' }
+            $actual=(Get-FileHash -LiteralPath $file -Algorithm SHA256).Hash.ToLowerInvariant()
+            if($actual -ne $expected) { throw 'ZIP_MEMBER_SHA256_MISMATCH' }
+            $checked++
+          }
+          $count=(Get-ChildItem -LiteralPath $base -File -Recurse | Measure-Object).Count
+          if($checked -ne 1009 -or $count -ne 1010) { throw "ZIP_INVENTORY_MISMATCH checked=$checked actual=$count" }
+          foreach($license in @(
+            'agent\vendor-runtime\node_modules\isarray\LICENSE',
+            'agent\vendor-runtime\node_modules\@bazel\runfiles\LICENSE',
+            'agent\vendor\chrome-devtools-mcp\LICENSE',
+            'THIRD_PARTY_NOTICES.md')) {
+            if(!(Test-Path -LiteralPath (Join-Path $base $license) -PathType Leaf)) { throw 'THIRD_PARTY_NOTICE_MISSING' }
+          }
+          if((Get-Content (Join-Path $base 'manifest.json') -Raw | ConvertFrom-Json).version -ne '0.1.9') { throw 'ZIP_VERSION_MISMATCH' }
+          Write-Output "DRAFT_V019_ZIP_1010_FILES_INDEPENDENT_SHA256_PASS=$hash"
       - name: Clean-install and uninstall exact beta
         shell: pwsh
         run: |
