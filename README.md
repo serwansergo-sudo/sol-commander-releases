@@ -37,6 +37,15 @@ For the stable experience, download from the verified link above. Follow the Win
 - **Unsigned prerelease; do not disable Windows security to install it.** Automatic updates remain disabled. Not the default stable download.
 - The public ChatGPT plugin is not in the directory; Cloudflare still exposes 32 tools despite 57 being prepared in source.
 
+## Third-party license information for v0.1.8
+
+[Independent immutable ZIP integrity and third-party inventory audit — PASS](https://github.com/serwansergo-sudo/sol-commander-releases/actions/runs/42195517638). The published v0.1.8 ZIP contains 33 npm runtime packages with declared license metadata. Two npm tarballs omitted an individual license-text file, so we provide the original upstream licenses here for review:
+
+- [isarray 1.0.0 — MIT license, copyright Julian Gruber](https://github.com/juliangruber/isarray/blob/master/LICENSE)
+- [@bazel/runfiles 6.5.0 — Apache License 2.0](https://github.com/bazel-contrib/rules_nodejs/blob/main/LICENSE)
+
+The next version of the installer is being prepared to include standalone copies of these notices. Existing published v0.1.8 EXE/ZIP files remain immutable. This inventory is not a complete legal audit; bundled Node.js, geckodriver and other notices must remain available under their applicable licenses.
+
 ## Previous beta v0.1.7 — independently tested, still unsigned
 
 [View v0.1.7 Beta release and setup download](https://github.com/serwansergo-sudo/sol-commander-releases/releases/tag/v0.1.7)
