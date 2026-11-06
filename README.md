@@ -4,15 +4,15 @@ One product for ChatGPT and an authorized Windows PC. You install **one Windows 
 
 ## Быстрый старт SOL Commander (русский)
 
-**Статус:** публичная тестовая версия Windows `0.1.8 Beta`. Плагин ещё не опубликован в каталоге ChatGPT. Сайт пока предлагает выпуск `0.1.6` с 32 инструментами PUBLIC_CORE. Автоматическое обновление неподписанных версий отключено.
+**Статус:** публичная тестовая версия Windows `0.1.9 Beta`. Плагин ещё не опубликован в каталоге ChatGPT. Сайт пока предлагает выпуск `0.1.6` с 32 инструментами PUBLIC_CORE. Автоматическое обновление неподписанных версий отключено.
 
-1. Откройте [SOL Commander v0.1.8 Beta](https://github.com/serwansergo-sudo/sol-commander-releases/releases/tag/v0.1.8) и скачайте только `SOL-Commander-Setup-v0.1.8.exe`. ZIP и JSON не нужно устанавливать.
-2. Проверяйте, что файл получен из данного GitHub-релиза. SHA-256 установщика: `93cd3ed77b03c7370b346e031d8cb187690544b5c876bdc54de94d70b6b22a6e`. Это неподписанная Beta: если Windows блокирует запуск, не отключайте защиту ради установки.
+1. Откройте [SOL Commander v0.1.9 Beta](https://github.com/serwansergo-sudo/sol-commander-releases/releases/tag/v0.1.9) и скачайте только `SOL-Commander-Setup-v0.1.9.exe`. ZIP и JSON не нужно устанавливать.
+2. Проверяйте, что файл получен из данного GitHub-релиза. SHA-256 установщика: `219a968340cb34b5a2570b348f32ce630d2775f21d8c5548fdb245efb1312c9a`. Это неподписанная Beta: если Windows блокирует запуск, не отключайте защиту ради установки.
 3. Если установка прошла без предупреждений, откройте SOL Commander и следуйте экранным инструкциям для подключения своей учётной записи и разрешённых папок. Плагин из общего каталога ChatGPT пока недоступен.
 4. Для тестирования используйте только свои несекретные файлы. Не подключайте медицинские карты, платёжные данные, пароли, документы детей и иные чувствительные материалы. Защита чувствительного содержимого неполная.
 5. Об ошибках сообщайте через [GitHub Issues](https://github.com/serwansergo-sudo/sol-commander-releases/issues), без персональных данных, логинов, паролей и токенов.
 
-[Независимый тест установки, обновления и удаления v0.1.8 — PASS](https://github.com/serwansergo-sudo/sol-commander-releases/actions/runs/42130912126). Это не сертификат цифровой подписи и не подтверждение публикации плагина OpenAI.
+[Независимый тест установки, обновления и удаления v0.1.9 — PASS](https://github.com/serwansergo-sudo/sol-commander-releases/actions/runs/42208324109). Это не сертификат цифровой подписи и не подтверждение публикации плагина OpenAI.
 
 ## Current public Windows download
 
@@ -27,7 +27,17 @@ One product for ChatGPT and an authorized Windows PC. You install **one Windows 
 
 For the stable experience, download from the verified link above. Follow the Windows installer prompts and review Windows security warnings. SOL requires explicit local permissions and an authorized pairing before it can work with your computer.
 
-## Public beta v0.1.8 — independently tested, still unsigned
+## Public beta v0.1.9 — independently tested, still unsigned
+
+[View v0.1.9 Beta release and Windows Setup](https://github.com/serwansergo-sudo/sol-commander-releases/releases/tag/v0.1.9)
+
+- Setup: `SOL-Commander-Setup-v0.1.9.exe` — 49,589,760 bytes, SHA-256 `219a968340cb34b5a2570b348f32ce630d2775f21d8c5548fdb245efb1312c9a`.
+- ZIP: SHA-256 `18e2c02cf5c25688449731d2486ff8eddd676b543c17113522add3b01be98c3e`. All 1,010 member files and third-party notices were verified on a GitHub Windows runner before release.
+- [Independent clean install, removal, stable-to-beta upgrade, SHA-pinned archive acceptance — PASS](https://github.com/serwansergo-sudo/sol-commander-releases/actions/runs/42208324109).
+- **Unsigned prerelease; do not disable Windows protections.** Automatic updates disabled. Does not replace v0.1.6 Cloudflare's default download.
+- ChatGPT plugin is not in the Directory; public Cloudflare currently exposes only 32 tools.
+
+## Previous beta v0.1.8 — independently tested, still unsigned
 
 [View v0.1.8 Beta release and Windows Setup](https://github.com/serwansergo-sudo/sol-commander-releases/releases/tag/v0.1.8)
 
@@ -44,7 +54,7 @@ For the stable experience, download from the verified link above. Follow the Win
 - [isarray 1.0.0 — MIT license, copyright Julian Gruber](https://github.com/juliangruber/isarray/blob/master/LICENSE)
 - [@bazel/runfiles 6.5.0 — Apache License 2.0](https://github.com/bazel-contrib/rules_nodejs/blob/main/LICENSE)
 
-The next version of the installer is being prepared to include standalone copies of these notices. Existing published v0.1.8 EXE/ZIP files remain immutable. This inventory is not a complete legal audit; bundled Node.js, geckodriver and other notices must remain available under their applicable licenses.
+The v0.1.9 Beta includes standalone copies of these notices. Existing published v0.1.8 EXE/ZIP files remain immutable. This inventory is not a complete legal audit; bundled Node.js, geckodriver and other notices must remain available under their applicable licenses.
 
 ## Previous beta v0.1.7 — independently tested, still unsigned
 
@@ -60,7 +70,7 @@ The next version of the installer is being prepared to include standalone copies
 | Component | Version/status | Meaning |
 | --- | --- | --- |
 | Default public Windows Setup | `0.1.6` | Configured via Cloudflare stable channel; GitHub release itself is marked Beta |
-| Windows beta installer | `0.1.8` — unsigned prerelease | Published beta; isolated installation/upgrade PASS; not stable auto-update |
+| Windows beta installer | `0.1.9` — unsigned prerelease | Published beta; isolated install and upgrade and independent ZIP integrity PASS; not stable auto-update |
 | Private ChatGPT development plugin | `1.0.9` | Plugin package version, not the Windows Agent version |
 | Public ChatGPT plugin | Not submitted or published | A separate review and approval process |
 
@@ -72,6 +82,6 @@ The Windows updater checks the public stable release metadata and independently 
 
 After a ChatGPT plugin is published, its hosted MCP tools can be rescanned and made available to users following OpenAI's validation. Package metadata and bundled skill updates still require a plugin package update.
 
-The GitHub `v0.1.8` release is the **newest public Windows prerelease**; earlier `v0.1.7` remains available. Both are independently tested but unsigned. The default public download remains v0.1.6. Both existing GitHub release records are currently marked prerelease, so GitHub's `/releases/latest` full-release endpoint does not yet resolve.
+The GitHub `v0.1.9` release is the **newest public Windows prerelease**; previous v0.1.8 and v0.1.7 remain available. These are independently tested but unsigned. The default public download remains v0.1.6. Both existing GitHub release records are currently marked prerelease, so GitHub's `/releases/latest` full-release endpoint does not yet resolve.
 
 For issues or feature requests: https://github.com/serwansergo-sudo/sol-commander-releases/issues
