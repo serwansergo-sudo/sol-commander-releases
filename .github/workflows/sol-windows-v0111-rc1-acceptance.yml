@@ -1,0 +1,118 @@
+name: SOL Windows 0.1.11 RC1 independent acceptance
+
+on:
+  workflow_dispatch:
+  release:
+    types: [published]
+
+permissions:
+  contents: read
+
+jobs:
+  windows-0111-rc1:
+    if: github.event_name == 'workflow_dispatch' || (github.event_name == 'release' && github.event.release.tag_name == 'v0.1.11-rc1')
+    name: SHA-pinned RC1 on disposable Windows 2022
+    runs-on: windows-2022
+    timeout-minutes: 25
+    steps:
+      - name: Download exact release assets and stable baseline
+        shell: pwsh
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          $ErrorActionPreference = 'Stop'
+          New-Item -ItemType Directory -Path beta,stable | Out-Null
+          gh release download v0.1.11-rc1 -R $env:GITHUB_REPOSITORY --pattern 'SOL-Commander-Setup-v0.1.11.exe' --pattern 'sol-commander-agent-windows-v0.1.11.zip' --pattern 'SOL-Commander-Release-v0.1.11.json' --dir beta
+          if ($LASTEXITCODE -ne 0) { throw 'RC1_DOWNLOAD_FAILED' }
+          gh release download v0.1.6 -R $env:GITHUB_REPOSITORY --pattern 'SOL-Commander-Setup-v0.1.6.exe' --dir stable
+          if ($LASTEXITCODE -ne 0) { throw 'BASELINE_DOWNLOAD_FAILED' }
+          $expected=@{
+            'SOL-Commander-Setup-v0.1.11.exe'='63bccf9fb9b4e8fe0c013819ff8041d7e10722505bc86fb95b21575f4bca8587';
+            'sol-commander-agent-windows-v0.1.11.zip'='d33f95bd61785c038e480fd5c8275d81d690a6b181b20f3ccefaa779717dc09f'
+          }
+          foreach($name in $expected.Keys) {
+            $path=Join-Path 'beta' $name
+            if (!(Test-Path -LiteralPath $path)) { throw "ASSET_MISSING:$name" }
+            if ((Get-FileHash -LiteralPath $path -Algorithm SHA256).Hash.ToLowerInvariant() -ne $expected[$name]) { throw "ASSET_SHA256_MISMATCH:$name" }
+          }
+          if ((Get-FileHash 'stable\SOL-Commander-Setup-v0.1.6.exe' -Algorithm SHA256).Hash.ToLowerInvariant() -ne '4852f8eacb847e2ab756cf882a6c95ee74b2596059579e20ae434dd4aedb92d4') { throw 'BASELINE_SHA256_MISMATCH' }
+          $manifest=Get-Content 'beta\SOL-Commander-Release-v0.1.11.json' -Raw | ConvertFrom-Json
+          if ($manifest.version -ne '0.1.11' -or $manifest.channel -ne 'beta' -or $manifest.signed -ne $false -or $manifest.sha256 -ne $expected['SOL-Commander-Setup-v0.1.11.exe'] -or $manifest.bytes -ne 51364864) { throw 'RELEASE_MANIFEST_MISMATCH' }
+          Write-Output 'RC1_ASSETS_AND_BASELINE_SHA256_PASS'
+
+      - name: Independently hash every ZIP member
+        shell: pwsh
+        run: |
+          $ErrorActionPreference='Stop'
+          Expand-Archive -LiteralPath 'beta\sol-commander-agent-windows-v0.1.11.zip' -DestinationPath 'unpacked'
+          $root=(Resolve-Path 'unpacked').Path
+          $lines=Get-Content -LiteralPath 'unpacked\SHA256SUMS.txt'
+          $checked=0
+          $seen=@{}
+          foreach($line in $lines) {
+            if($line -notmatch '^([0-9a-f]{64})  (.+)$'){ throw 'CHECKSUM_LINE_FORMAT' }
+            $expected=$Matches[1]
+            $name=$Matches[2].Replace('/','\')
+            if($name.StartsWith('\') -or $name.Split('\').Contains('..') -or $seen.ContainsKey($name.ToLowerInvariant())) { throw 'UNSAFE_OR_DUPLICATE_ARCHIVE_PATH' }
+            $seen[$name.ToLowerInvariant()]=$true
+            $path=Join-Path $root $name
+            if(!(Test-Path -LiteralPath $path -PathType Leaf)){ throw "ZIP_MEMBER_MISSING:$name" }
+            if((Get-FileHash -LiteralPath $path -Algorithm SHA256).Hash.ToLowerInvariant() -ne $expected){ throw "ZIP_MEMBER_HASH_MISMATCH:$name" }
+            $checked++
+          }
+          $fileCount=(Get-ChildItem -LiteralPath $root -File -Recurse | Measure-Object).Count
+          if($checked -ne 1016 -or $fileCount -ne 1017){ throw "ARCHIVE_INVENTORY_MISMATCH:checked=$checked total=$fileCount" }
+          foreach($relative in @('runtime\node.exe','agent\dist\main.js','agent\dist\tools\desktop.js','integrations\agent-desktop\agent-desktop-win32-x64.exe','integrations\agent-desktop\LICENSE','THIRD_PARTY_NOTICES.md')) {
+            if(!(Test-Path -LiteralPath (Join-Path $root $relative) -PathType Leaf)){ throw "RUNTIME_OR_LICENSE_MISSING:$relative" }
+          }
+          if((Get-Content (Join-Path $root 'manifest.json') -Raw | ConvertFrom-Json).version -ne '0.1.11'){ throw 'ZIP_AGENT_VERSION_MISMATCH' }
+          Write-Output "RC1_ZIP_ALL_MEMBERS_PASS=$checked"
+
+      - name: Self-test clean install and uninstall
+        shell: pwsh
+        run: |
+          $ErrorActionPreference='Stop'
+          $setup=Join-Path $PWD 'beta\SOL-Commander-Setup-v0.1.11.exe'
+          $root=Join-Path $env:RUNNER_TEMP 'SOL Commander 0111 clean acceptance'
+          $t=Start-Process -FilePath $setup -ArgumentList '--self-test' -Wait -PassThru
+          if($t.ExitCode -ne 0){ throw "SETUP_SELF_TEST_FAILED:$($t.ExitCode)" }
+          $args=@('--quiet','--acceptance','--install-root',('"' + $root + '"'))
+          $i=Start-Process -FilePath $setup -ArgumentList $args -Wait -PassThru
+          if($i.ExitCode -ne 0){ throw "RC1_CLEAN_INSTALL_FAILED:$($i.ExitCode)" }
+          if((Get-Content (Join-Path $root 'runtime.json') -Raw | ConvertFrom-Json).version -ne '0.1.11'){ throw 'INSTALLED_VERSION_MISMATCH' }
+          foreach($rel in @('app\0.1.11\agent\dist\main.js','app\0.1.11\runtime\node.exe','app\0.1.11\integrations\agent-desktop\agent-desktop-win32-x64.exe')){
+            if(!(Test-Path -LiteralPath (Join-Path $root $rel) -PathType Leaf)){ throw "INSTALLED_RUNTIME_MISSING:$rel" }
+          }
+          $u=Start-Process -FilePath $setup -ArgumentList @('--uninstall','--quiet','--acceptance','--install-root',('"' + $root + '"')) -Wait -PassThru
+          if($u.ExitCode -ne 0){ throw "RC1_UNINSTALL_FAILED:$($u.ExitCode)" }
+          if(Test-Path -LiteralPath (Join-Path $root 'app')){ throw 'RC1_APP_FILES_SURVIVED_UNINSTALL' }
+          Write-Output 'RC1_ISOLATED_INSTALL_UNINSTALL_PASS'
+
+      - name: Upgrade stable 0.1.6 to 0.1.11 and preserve synthetic data
+        shell: pwsh
+        run: |
+          $ErrorActionPreference='Stop'
+          $root=Join-Path $env:RUNNER_TEMP 'SOL Commander 0111 upgrade acceptance'
+          $stable=Join-Path $PWD 'stable\SOL-Commander-Setup-v0.1.6.exe'
+          $candidate=Join-Path $PWD 'beta\SOL-Commander-Setup-v0.1.11.exe'
+          $args=@('--quiet','--acceptance','--install-root',('"' + $root + '"'))
+          $s=Start-Process -FilePath $stable -ArgumentList $args -Wait -PassThru
+          if($s.ExitCode -ne 0){ throw "BASELINE_INSTALL_FAILED:$($s.ExitCode)" }
+          $data=Join-Path $root 'data'
+          New-Item -ItemType Directory -Path $data -Force | Out-Null
+          $fixture=Join-Path $data 'synthetic-preserve.txt'
+          [IO.File]::WriteAllText($fixture,'SYNTHETIC_DATA_KEEP')
+          $c=Start-Process -FilePath $candidate -ArgumentList $args -Wait -PassThru
+          if($c.ExitCode -ne 0){ throw "RC1_UPGRADE_FAILED:$($c.ExitCode)" }
+          if((Get-Content (Join-Path $root 'runtime.json') -Raw | ConvertFrom-Json).version -ne '0.1.11'){ throw 'UPGRADE_VERSION_MISMATCH' }
+          if((Get-Content $fixture -Raw) -ne 'SYNTHETIC_DATA_KEEP'){ throw 'DATA_MODIFIED_BY_UPGRADE' }
+          $u=Start-Process -FilePath $candidate -ArgumentList @('--uninstall','--quiet','--acceptance','--install-root',('"' + $root + '"')) -Wait -PassThru
+          if($u.ExitCode -ne 0){ throw "UPGRADE_UNINSTALL_FAILED:$($u.ExitCode)" }
+          if(!(Test-Path -LiteralPath $fixture)){ throw 'UNINSTALL_DELETED_USER_DATA' }
+          Write-Output 'RC1_UPGRADE_PRESERVES_USER_DATA_PASS'
+
+      - name: Explicit limits of this acceptance
+        shell: pwsh
+        run: |
+          Write-Output 'DISPOSABLE WINDOWS ONLY: no real user data, credentials, OAuth or pairing.'
+          Write-Output 'This is an UNSIGNED candidate, NOT trusted Authenticode, automatic update, OpenAI directory approval, or production desktop-control approval.'
